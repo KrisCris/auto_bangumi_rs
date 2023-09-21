@@ -27,18 +27,14 @@ async fn test_url(url: &str) {
         for item in channel.items {
             if let Some(raw_title) = item.title {
                 let parser = Parser::new(raw_title);
+                println!("- Raw Title: {}", parser.raw());
                 if parser.can_parse() {
-                    println!("- Raw Title: {}", parser.raw());
-                    let sp = format!(
-                        "S{:02}E{:02}",
-                        parser.season(),
-                        parser.episode().unwrap_or(1)
-                    );
-                    let group = match parser.group() {
-
+                    match parser.to_bangumi() {
+                        Some(b) => println!("{}", b),
+                        None => eprintln!("{}", "FAILED".red())
                     }
                 } else {
-                    eprintln!("- Unable to Parse Title: {}", parser.raw().red())
+                    eprintln!("{}", "FAILED".red())
                 }
             }
         }

@@ -17,9 +17,9 @@ impl fmt::Display for BangumiTitle {
         write!(
             f,
             "{} {} {}",
-            self.get_title(LANG::CN).green(),
-            self.get_title(LANG::EN).blue(),
-            self.get_title(LANG::JP).yellow(),
+            self.get_title(LANG::CN).bright_green(),
+            self.get_title(LANG::EN).bright_blue(),
+            self.get_title(LANG::JP).bright_yellow(),
         )
     }
 }
@@ -54,31 +54,31 @@ pub struct Bangumi {
     pub title: BangumiTitle,
     pub season: u32,
     pub episode: u32,
-    pub group: Option<String>,
+    pub group: String,
 }
 
 impl fmt::Display for Bangumi {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let sp = format!("S{:02}E{:02}", &self.season, &self.episode);
-        let group = match &self.group {
-            Some(g) => Some(format!("- {}", g)),
-            None => None,
+        let group = match self.group.len() > 0{
+            true => format!("- {}", self.group),
+            false => String::from(""),
         };
         write!(
             f,
             "{} - {} {}",
             &self.title,
-            sp.yellow(),
-            group.unwrap_or_default().bold()
+            sp.bright_red(),
+            group.bright_cyan()
         )
     }
 }
 
 impl Bangumi {
     pub fn gen_filename(&self, ext: &str) -> String {
-        let group = match &self.group {
-            Some(g) => Some(format!("- {}", g)),
-            None => None,
+        let group = match self.group.len() > 0{
+            true => format!("- {}", self.group),
+            false => String::from(""),
         };
 
         format!(
@@ -86,7 +86,7 @@ impl Bangumi {
             self.title.get_default_title(),
             self.season,
             self.episode,
-            group.unwrap_or_default(),
+            group,
             ext
         )
     }

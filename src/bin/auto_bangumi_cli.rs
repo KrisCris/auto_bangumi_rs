@@ -1,6 +1,6 @@
+use auto_bangumi_rs::parser::Parser;
 use std::{env, fs, path::Path, process::exit};
 
-use auto_bangumi_rs::BangumiInfo;
 fn main() {
     let mut args: Vec<String> = env::args().collect();
     if args.len() < 2 {
@@ -22,8 +22,8 @@ fn main() {
                 Some(p) => p.to_str().unwrap(),
                 None => "",
             };
-
-            match BangumiInfo::parse(filename) {
+            let parser = Parser::new(filename.to_owned());
+            match parser.to_bangumi() {
                 Some(info) => {
                     let new_filename = sanitize_filename(&info.gen_filename(ext));
                     println!("=> {}", new_filename);

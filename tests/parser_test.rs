@@ -1,16 +1,17 @@
-use auto_bangumi_rs::{parser::Parser, BangumiInfo};
+use auto_bangumi_rs::{parser::Parser};
 use regex::Regex;
 use rss::Channel;
 
 #[test]
 fn test_parser() {
     for title in get_titles() {
-        let parsed = BangumiInfo::parse(title.0);
+        let parsed = Parser::new(title.0.to_owned()).to_bangumi();
         assert!(parsed.is_some());
         let parsed = parsed.unwrap();
+        println!("{}", parsed);
         assert_eq!(title.2, parsed.season);
         assert_eq!(title.3, parsed.episode);
-        assert_eq!(title.4, parsed.group.unwrap());
+        assert_eq!(title.4, parsed.group);
         assert_eq!(title.1, parsed.title.get_default_title());
     }
 }
@@ -20,13 +21,6 @@ async fn test_mikan() {
     for url in get_rss_links() {
         test_url(&url).await;
     }
-}
-
-#[tokio::test]
-async fn test_dmhy() {
-    let url =
-        "https://share.dmhy.org/topics/rss/rss.xml?keyword=&sort_id=2&team_id=0&order=date-desc";
-    test_url(&url).await;
 }
 
 #[tokio::test]

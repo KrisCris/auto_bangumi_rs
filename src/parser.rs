@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::{collections::HashMap, ops::Range};
 
-use crate::bangumi::BangumiTitle;
+use crate::bangumi::{BangumiTitle, Bangumi};
 
 lazy_static! {
     static ref CN_NUM: HashMap<&'static str, u32> = {
@@ -118,10 +118,10 @@ impl Parser {
                 if tokens.len() == 1 {
                     tokens = match raw_title {
                         _ if RE_UNDERSCORE.is_match(tokens[0]) => {
-                            Self::split_and_trim(&RE_UNDERSCORE, tokens[0])
+                            split_and_trim(&RE_UNDERSCORE, tokens[0])
                         }
                         _ if RE_DASH.is_match(tokens[0]) => {
-                            Self::split_and_trim(&RE_DASH, tokens[0])
+                            split_and_trim(&RE_DASH, tokens[0])
                         }
                         _ => tokens,
                     };
@@ -144,58 +144,13 @@ impl Parser {
                 }
 
                 return Some(BangumiTitle::new(
-                    Self::join_and_clean(list_cn),
-                    Self::join_and_clean(list_en),
-                    Self::join_and_clean(list_jp),
+                    join_and_clean(list_cn),
+                    join_and_clean(list_en),
+                    join_and_clean(list_jp),
                 ));
             }
             None => None,
         }
-
-        // if let Some(raw_title) = RE_MAIN_SPLIT
-        //     .captures(&self.raw)
-        //     .and_then(|caps| caps.name("season").map(|m| m.as_str()))
-        // {
-        //     let raw_title = RE_SEASON.replace_all(&raw_title, "");
-        //     let raw_title = RE_SIDE_EMPTY_BRACKETS.replace_all(raw_title.trim(), "");
-        //     let raw_title = raw_title.trim();
-
-        //     let mut tokens: Vec<&str> =
-        //         RE_TITLE_SPLIT.split(&raw_title).map(|s| s.trim()).collect();
-
-        //     if tokens.len() == 1 {
-        //         tokens = match raw_title {
-        //             _ if RE_UNDERSCORE.is_match(tokens[0]) => {
-        //                 Self::split_and_trim(&RE_UNDERSCORE, tokens[0])
-        //             }
-        //             _ if RE_DASH.is_match(tokens[0]) => Self::split_and_trim(&RE_DASH, tokens[0]),
-        //             _ => tokens,
-        //         };
-        //     }
-
-        //     let mut list_jp = Vec::new();
-        //     let mut list_cn = Vec::new();
-        //     let mut list_en = Vec::new();
-
-        //     for token in tokens {
-        //         match token {
-        //             _ if RE_CN.is_match(token) => &mut list_cn,
-        //             _ if RE_EN.is_match(token) => &mut list_en,
-        //             _ if RE_JP.is_match(token) => &mut list_jp,
-        //             _ => {
-        //                 continue;
-        //             }
-        //         }
-        //         .push(token);
-        //     }
-
-        //     return Some(BangumiTitle::new(
-        //         Self::join_and_clean(list_cn),
-        //         Self::join_and_clean(list_en),
-        //         Self::join_and_clean(list_jp),
-        //     ));
-        // }
-        // None
     }
 
     pub fn season(&self) -> u32 {
@@ -231,46 +186,9 @@ impl Parser {
             }
             None => 1,
         }
-        // if let Some(raw_season) = RE_MAIN_SPLIT
-        //     .captures(&self.raw)
-        //     .and_then(|caps| caps.name("season").map(|m| m.as_str()))
-        // {
-        //     // let raw_season = raw_ep.trim().replace("[", " ").replace("]", " ");
-        //     let season_tokens: Vec<&str> = RE_SEASON
-        //         .find_iter(&raw_season)
-        //         .map(|m| m.as_str())
-        //         .collect();
-
-        //     if season_tokens.is_empty() {
-        //         return 1;
-        //     }
-
-        //     for token in season_tokens {
-        //         if let Some(m) = RE_SEASON_DIGIT.captures(token).and_then(|c| c.get(1)) {
-        //             let str_num = m.as_str();
-        //             match str_num.parse() {
-        //                 Ok(num) => return num,
-        //                 Err(_) => continue,
-        //             }
-        //         } else {
-        //             if let Some(m) = RE_SEASON_CN_DIGIT.captures(token).and_then(|c| c.get(1)) {
-        //                 let cn_num = m.as_str();
-        //                 match CN_NUM.get(cn_num) {
-        //                     Some(&num) => return num,
-        //                     None => continue,
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-        // 1
     }
 
     pub fn episode(&self) -> Option<u32> {
-        // if let Some(raw_episode) = RE_MAIN_SPLIT
-        //     .captures(&self.raw)
-        //     .and_then(|caps| caps.name("episode").map(|m| m.as_str()))
-        // {
         match &self.raw_episode {
             Some(range) => {
                 if let Some(cap) = RE_EPISODE.captures(&self.raw[range.to_owned()]) {
@@ -295,29 +213,44 @@ impl Parser {
         }
     }
 
-    fn split_and_trim<'a>(re: &Regex, s: &'a str) -> Vec<&'a str> {
-        re.split(s)
-            .filter_map(|token| {
-                let trimmed = token.trim();
-                if trimmed.is_empty() {
-                    None
-                } else {
-                    Some(trimmed)
-                }
-            })
-            .collect()
-    }
-
-    fn join_and_clean(list: Vec<&str>) -> Option<String> {
-        if list.is_empty() {
-            None
-        } else {
-            let mut name = list.join(" ").trim().to_owned();
-            // ugly workaround...
-            if name.ends_with(" -") {
-                name = name[..name.len() - 2].to_owned();
-            }
-            Some(name)
+    pub fn to_bangumi(self) -> Option<Bangumi> {
+        match self.can_parse() {
+            true => {
+                let group = self.group().unwrap_or("").to_owned();
+                let Some(title) = self.title() else {
+                    return None;
+                };
+                let season = self.season();
+                let episode = self.episode().unwrap_or(0);
+                Some(Bangumi { title, season, episode, group })
+            },
+            false => None
         }
+    }
+}
+
+fn split_and_trim<'a>(re: &Regex, s: &'a str) -> Vec<&'a str> {
+    re.split(s)
+        .filter_map(|token| {
+            let trimmed = token.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed)
+            }
+        })
+        .collect()
+}
+
+fn join_and_clean(list: Vec<&str>) -> Option<String> {
+    if list.is_empty() {
+        None
+    } else {
+        let mut name = list.join(" ").trim().to_owned();
+        // ugly workaround...
+        if name.ends_with(" -") {
+            name = name[..name.len() - 2].to_owned();
+        }
+        Some(name)
     }
 }
