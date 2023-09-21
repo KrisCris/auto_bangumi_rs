@@ -27,7 +27,6 @@ async fn test_url(url: &str) {
         for item in channel.items {
             if let Some(raw_title) = item.title {
                 let parser = Parser::new(raw_title);
-                println!("- Raw Title: {}", parser.raw());
                 if parser.can_parse() {
                     match parser.to_bangumi() {
                         Some(b) => println!("{}", b),
