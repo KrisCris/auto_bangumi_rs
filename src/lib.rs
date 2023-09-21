@@ -1,4 +1,5 @@
-// pub mod parser;
+pub mod bangumi;
+pub mod parser;
 
 use colored::Colorize;
 use core::fmt;

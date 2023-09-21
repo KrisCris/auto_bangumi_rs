@@ -1,4 +1,4 @@
-use auto_bangumi_rs::BangumiInfo;
+use auto_bangumi_rs::{parser::Parser, BangumiInfo};
 use regex::Regex;
 use rss::Channel;
 
@@ -43,14 +43,18 @@ async fn test_url(url: &str) {
         let bytes = &res.bytes().await.unwrap()[..];
         let channel = Channel::read_from(bytes).unwrap();
         // let link = channel.link.to_owned();
-        let filter_re = Regex::new(r"\d{1,2}-\d{1,2}|.*Dasu - None.*").unwrap();
-        for item in channel.items() {
-            if let Some(raw_title) = item.title() {
-                if filter_re.is_match(raw_title) {
+        let filter_re =
+            Regex::new(r"\d{1,2}-\d{1,2}|.*Dasu - None.*|铃芽之旅|Suzume|2\d{3}|Anne Frank")
+                .unwrap();
+        for item in channel.items {
+            if let Some(raw_title) = item.title {
+                if filter_re.is_match(&raw_title) {
                     println!("[Info] Ignore feed: {}", raw_title);
                     continue;
                 }
-                let result = BangumiInfo::parse(raw_title);
+                println!("- {}", raw_title);
+                let result = Parser::new(raw_title).title();
+                println!("{}", result.as_ref().unwrap());
                 assert!(result.is_some());
             }
         }
@@ -72,6 +76,49 @@ fn get_rss_links() -> Vec<String> {
         }
     }
     links
+}
+
+#[test]
+fn test_parser_season() {
+    for title in get_titles() {
+        let parser = Parser::new(title.0.to_owned());
+        println!("- {}", title.0);
+        assert_eq!(title.2, parser.season());
+    }
+}
+
+#[test]
+fn test_parser_episode() {
+    for title in get_titles() {
+        let parser = Parser::new(title.0.to_owned());
+        println!("- {}", title.0);
+        assert!(parser.episode().is_some());
+        assert_eq!(title.3, parser.episode().unwrap());
+    }
+}
+
+#[test]
+fn test_parser_title() {
+    for title in get_titles() {
+        let parser = Parser::new(title.0.to_owned());
+        println!("- {}", title.0);
+        assert!(parser.title().is_some());
+        let titles = parser.title().unwrap();
+        println!("{}", titles);
+        assert_eq!(title.1, titles.get_default_title());
+    }
+}
+
+#[test]
+fn test_parser_group() {
+    for title in get_titles() {
+        let parser = Parser::new(title.0.to_owned());
+        println!("- {}", title.0);
+        let group = parser.group();
+        assert!(group.is_some());
+        println!("- {}", group.unwrap());
+        assert_eq!(title.4, group.unwrap());
+    }
 }
 
 fn get_titles() -> Vec<(&'static str, &'static str, u32, u32, &'static str)> {

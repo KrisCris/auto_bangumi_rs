@@ -44,6 +44,7 @@ name = "auto_bangumi_rs"
 version = "0.1.0"
 dependencies = [
  "colored",
+ "lazy_static",
  "regex",
  "reqwest",
  "rss",
