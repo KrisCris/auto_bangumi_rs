@@ -21,7 +21,7 @@ lazy_static! {
     };
 
     static ref RE_GROUP: Regex = Regex::new(r"\[([^\]]+)\]").unwrap();
-    static ref RE_MAIN_SPLIT: Regex = Regex::new(r"\[([^\]]+)\](?P<season>.*|\[.*])(?P<episode>\(\d{1,3}\)| -? \d+|\[\d+]|\[\d+.?[vV]\d]|第\d+[话話集]|\[第?\d+[话話集]]|\[\d+.?END]|[Ee][Pp]?\d+|\[?特[別别]篇\]?|\[?[總总]集篇\]?| \d+ )(?P<others>.*)").unwrap();
+    static ref RE_MAIN_SPLIT: Regex = Regex::new(r"(?:\[([^\]]+)\])?(?P<season>.*|\[.*])(?P<episode>\(\d{1,3}\)| -? \d+|\[\d+]|\[\d+.?[vV]\d]|第\d+[话話集]|\[第?\d+[话話集]]|\[\d+.?END]|[Ee][Pp]?\d+|\[?特[別别]篇\]?|\[?[總总]集篇\]?| \d+ )(?P<others>.*)").unwrap();
     static ref RE_EPISODE: Regex = Regex::new(r"(\d+)").unwrap();
     static ref RE_SEASON: Regex = Regex::new(r"(\d{1,2}(?:st|nd|rd|th) Season)|(Season \d{1,2})|(S\d{1,2})|[第].[季期]|\d[季期]").unwrap();
     static ref RE_SEASON_EN: Regex = Regex::new(r"Season|S").unwrap();
