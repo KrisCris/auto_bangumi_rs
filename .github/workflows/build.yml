@@ -1,0 +1,76 @@
+name: Build
+
+on:
+  push:
+      branches: [ master ]
+  pull_request:
+      branches: [ master ]
+
+jobs:
+  build:
+    name: ${{ matrix.rust_target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        rust_target: [x86_64-unknown-linux-gnu, x86_64-pc-windows-gnu, x86_64-apple-darwin, aarch64-apple-darwin]
+        exclude:
+          - os: ubuntu-latest
+            rust_target: x86_64-pc-windows-gnu
+          - os: ubuntu-latest
+            rust_target: aarch64-apple-darwin
+          - os: ubuntu-latest
+            rust_target: x86_64-apple-darwin
+          - os: windows-latest
+            rust_target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            rust_target: aarch64-apple-darwin
+          - os: windows-latest
+            rust_target: x86_64-apple-darwin
+          - os: macOS-latest
+            rust_target: x86_64-pc-windows-gnu
+          - os: macOS-latest
+            rust_target: x86_64-unknown-linux-gnu
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # - name: Install Rust toolchain
+      #   uses: actions-rs/toolchain@v1
+      #   with:
+      #     toolchain: nightly
+      #     override: true
+      #     components: rustfmt, clippy
+      #     target: ${{ matrix.rust_target }}
+
+      - name: Install Rust
+        shell: bash
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          rustup default nightly
+
+
+      - name: Build
+        run: | 
+          rustup target add ${{ matrix.rust_target }}
+          cargo build --release --target ${{ matrix.rust_target }}
+
+      - name: Clean
+        shell: bash
+        run: |
+          mkdir output
+          names=$(ls src/bin | sed -e 's/\.rs$//')
+          for name in $names; do
+            rm "target/${{ matrix.rust_target }}/release/$name.d"
+            cp target/${{ matrix.rust_target }}/release/$name* output/
+          done
+
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.rust_target }}-artifact
+          path: output/

@@ -1,0 +1,33 @@
+name: Build MUSL
+
+on:
+  push:
+      branches: [ master ]
+  pull_request:
+      branches: [ master ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build-musl
+      uses: gmiam/rust-musl-action@master
+      with:
+        args: cargo build --target x86_64-unknown-linux-musl --release
+        
+    - name: Clean
+      shell: bash
+      run: |
+        mkdir output
+        names=$(ls src/bin | sed -e 's/\.rs$//')
+        for name in $names; do
+          sudo rm "target/x86_64-unknown-linux-musl/release/$name.d"
+          cp target/x86_64-unknown-linux-musl/release/$name* output/
+        done
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: x86_64-unknown-linux-musl-artifact
+        path: output/
