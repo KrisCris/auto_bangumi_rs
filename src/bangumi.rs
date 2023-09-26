@@ -1,5 +1,6 @@
 use colored::Colorize;
 use core::fmt;
+use std::path::PathBuf;
 
 pub enum LANG {
     EN,
@@ -55,12 +56,13 @@ pub struct Bangumi {
     pub season: u32,
     pub episode: u32,
     pub group: String,
+    pub extension: Option<String>,
 }
 
 impl fmt::Display for Bangumi {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let sp = format!("S{:02}E{:02}", &self.season, &self.episode);
-        let group = match self.group.len() > 0{
+        let group = match self.group.len() > 0 {
             true => format!("- {}", self.group),
             false => String::from(""),
         };
@@ -75,19 +77,47 @@ impl fmt::Display for Bangumi {
 }
 
 impl Bangumi {
-    pub fn gen_filename(&self, ext: &str) -> String {
-        let group = match self.group.len() > 0{
+    pub fn new(
+        title: BangumiTitle,
+        season: u32,
+        episode: u32,
+        group: String,
+        extension: Option<String>,
+    ) -> Self {
+        Bangumi {
+            title,
+            season,
+            episode,
+            group,
+            extension,
+        }
+    }
+    pub fn gen_filename(&self) -> String {
+        let group = match self.group.len() > 0 {
             true => format!("- {}", self.group),
             false => String::from(""),
         };
 
+        let ext = match &self.extension {
+            Some(p) => p,
+            None => ""
+        };
+
         format!(
-            "{} - S{:02}E{:02} {}.{}",
+            "{} - S{:02}E{:02} {}{}",
             self.title.get_default_title(),
             self.season,
             self.episode,
             group,
             ext
         )
+    }
+
+    pub fn gen_fullpath(&self, dest: &PathBuf, group: bool) -> PathBuf {
+        if group {
+            dest.join(self.title.get_default_title()).join(format!("Season {:02}", self.season)).join(self.gen_filename())
+        } else {
+            dest.join(self.gen_filename())
+        }
     }
 }

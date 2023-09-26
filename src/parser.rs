@@ -1,8 +1,8 @@
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::{collections::HashMap, ops::Range};
+use std::{collections::HashMap, ops::Range, path::PathBuf};
 
-use crate::bangumi::{BangumiTitle, Bangumi};
+use crate::bangumi::{Bangumi, BangumiTitle};
 
 lazy_static! {
     static ref CN_NUM: HashMap<&'static str, u32> = {
@@ -40,17 +40,18 @@ lazy_static! {
     static ref RE_JP: Regex = Regex::new(r"[\u0800-\u4e00]{2,}").unwrap();
     static ref RE_CN: Regex = Regex::new(r"[\u4e00-\u9fa5]{2,}").unwrap();
     static ref RE_EN: Regex = Regex::new(r"[a-zA-Z]{3,}").unwrap();
+    static ref RE_EXT: Regex = Regex::new(r"(?P<ext>\.\w+)$").unwrap();
 }
 pub struct Parser {
     raw: String,
     raw_season: Option<Range<usize>>,
     raw_episode: Option<Range<usize>>,
-    _raw_others: Option<Range<usize>>,
+    raw_others: Option<Range<usize>>,
 }
 
 impl Parser {
     pub fn new(raw_title: String) -> Self {
-        println!("- Raw Title: {}", raw_title);
+        // println!("- Raw Title: {}", raw_title);
         // this looks bad but idk if there is a better way...
         let processed = RE_LEFT_BRACKETS.replace_all(&raw_title.trim(), " [");
         let processed = RE_RIGHT_BRACKETS.replace_all(&processed, "] ");
@@ -94,8 +95,19 @@ impl Parser {
             raw,
             raw_season,
             raw_episode,
-            _raw_others: raw_others,
+            raw_others,
         }
+    }
+
+    pub fn from_path(path: &PathBuf) -> Option<Self> {
+        if !path.is_file() {
+            return None;
+        }
+        if let Some(filename) = path.file_name() {
+            let name = filename.to_string_lossy().as_ref().to_owned();
+            return Some(Self::new(name));
+        }
+        None
     }
 
     pub fn group(&self) -> Option<&str> {
@@ -122,9 +134,7 @@ impl Parser {
                         _ if RE_UNDERSCORE.is_match(tokens[0]) => {
                             split_and_trim(&RE_UNDERSCORE, tokens[0])
                         }
-                        _ if RE_DASH.is_match(tokens[0]) => {
-                            split_and_trim(&RE_DASH, tokens[0])
-                        }
+                        _ if RE_DASH.is_match(tokens[0]) => split_and_trim(&RE_DASH, tokens[0]),
                         _ => tokens,
                     };
                 }
@@ -205,6 +215,22 @@ impl Parser {
         }
     }
 
+    pub fn extension(&self) -> Option<String> {
+        match &self.raw_others {
+            Some(range) => {
+                if let Some(m) = RE_EXT
+                    .captures(&self.raw[range.to_owned()])
+                    .and_then(|cap| cap.name("ext"))
+                {
+                    Some(m.as_str().to_owned())
+                } else {
+                    None
+                }
+            }
+            None => None,
+        }
+    }
+
     pub fn raw(&self) -> &str {
         &self.raw
     }
@@ -225,9 +251,15 @@ impl Parser {
                 };
                 let season = self.season();
                 let episode = self.episode().unwrap_or(0);
-                Some(Bangumi { title, season, episode, group })
-            },
-            false => None
+                Some(Bangumi::new(
+                    title,
+                    season,
+                    episode,
+                    group,
+                    self.extension().to_owned(),
+                ))
+            }
+            false => None,
         }
     }
 }
