@@ -103,6 +103,7 @@ fn rename_file(
     if dryrun {
         return Ok(());
     }
+
     if let Some(folder) = dst.parent() {
         if let Err(e) = create_dir_all(folder) {
             eprint!(
@@ -114,18 +115,12 @@ fn rename_file(
     }
 
     match mode {
-        Mode::Move => match fs::rename(src, dst) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(e),
-        },
+        Mode::Move => fs::rename(src, dst),
         Mode::Copy => match fs::copy(src, dst) {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
         },
-        Mode::HardLink => match fs::hard_link(src, dst) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(e),
-        },
+        Mode::HardLink => fs::hard_link(src, dst),
     }
 }
 

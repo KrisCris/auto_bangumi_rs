@@ -1,25 +1,10 @@
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::{collections::HashMap, ops::Range, path::PathBuf};
+use std::{ops::Range, path::PathBuf};
 
 use crate::bangumi::{Bangumi, BangumiTitle};
 
 lazy_static! {
-    static ref CN_NUM: HashMap<&'static str, u32> = {
-        let mut m = HashMap::new();
-        m.insert("一", 1);
-        m.insert("二", 2);
-        m.insert("三", 3);
-        m.insert("四", 4);
-        m.insert("五", 5);
-        m.insert("六", 6);
-        m.insert("七", 7);
-        m.insert("八", 8);
-        m.insert("九", 9);
-        m.insert("十", 10);
-        m
-    };
-
     static ref RE_GROUP: Regex = Regex::new(r"\[([^\]]+)\]").unwrap();
     static ref RE_MAIN_SPLIT: Regex = Regex::new(r"(?:\[([^\]]+)\])?(?P<season>.*|\[.*])(?P<episode>\(\d{1,3}\)| -? \d+|\[\d+]|\[\d+.?[vV]\d]|第\d+[话話集]|\[第?\d+[话話集]]|\[\d+.?END]|[Ee][Pp]?\d+|\[?特[別别]篇\]?|\[?[總总]集篇\]?| \d+ |\d{1,4}-\d{1,4}|合集)(?P<others>.*)").unwrap();
     static ref RE_EPISODE: Regex = Regex::new(r"(\d+)").unwrap();
@@ -188,8 +173,8 @@ impl Parser {
                     } else {
                         if let Some(m) = RE_SEASON_CN_DIGIT.captures(token).and_then(|c| c.get(1)) {
                             let cn_num = m.as_str();
-                            match CN_NUM.get(cn_num) {
-                                Some(&num) => return num,
+                            match cn_to_digit(cn_num) {
+                                Some(num) => return num,
                                 None => continue,
                             }
                         }
@@ -261,6 +246,22 @@ impl Parser {
             }
             false => None,
         }
+    }
+}
+
+fn cn_to_digit(cn_digit: &str) -> Option<u32> {
+    match cn_digit {
+        "一" => Some(1),
+        "二" => Some(2),
+        "三" => Some(3),
+        "四" => Some(4),
+        "五" => Some(5),
+        "六" => Some(6),
+        "七" => Some(7),
+        "八" => Some(8),
+        "九" => Some(9),
+        "十" => Some(10),
+        _ => None,
     }
 }
 
