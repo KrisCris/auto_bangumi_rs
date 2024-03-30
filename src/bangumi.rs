@@ -115,7 +115,7 @@ impl Bangumi {
 
     pub fn gen_fullpath(&self, dest: &PathBuf, group: bool) -> PathBuf {
         if group {
-            dest.join(self.title.get_default_title()).join(format!("Season {:02}", self.season)).join(self.gen_filename())
+            dest.join(self.title.get_default_title()).join(format!("Season {}", self.season)).join(self.gen_filename())
         } else {
             dest.join(self.gen_filename())
         }
