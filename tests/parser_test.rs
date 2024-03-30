@@ -1,11 +1,11 @@
-use auto_bangumi_rs::{parser::Parser};
+use auto_bangumi_rs::parser::Parser;
 use regex::Regex;
 use rss::Channel;
 
 #[test]
 fn test_parser() {
     for title in get_titles() {
-        let parsed = Parser::new(title.0.to_owned()).to_bangumi();
+        let parsed = Parser::new(title.0.to_owned()).and_then(|parser| parser.to_bangumi());
         assert!(parsed.is_some());
         let parsed = parsed.unwrap();
         println!("{}", parsed);
@@ -47,7 +47,7 @@ async fn test_url(url: &str) {
                     continue;
                 }
                 println!("- {}", raw_title);
-                let result = Parser::new(raw_title).title();
+                let result = Parser::new(raw_title).and_then(|p| p.title());
                 println!("{}", result.as_ref().unwrap());
                 assert!(result.is_some());
             }
@@ -77,14 +77,14 @@ fn test_parser_season() {
     for title in get_titles() {
         let parser = Parser::new(title.0.to_owned());
         println!("- {}", title.0);
-        assert_eq!(title.2, parser.season());
+        assert_eq!(true, parser.is_some_and(|p| p.season() == title.2));
     }
 }
 
 #[test]
 fn test_parser_episode() {
     for title in get_titles() {
-        let parser = Parser::new(title.0.to_owned());
+        let parser = Parser::new(title.0.to_owned()).unwrap();
         println!("- {}", title.0);
         assert!(parser.episode().is_some());
         assert_eq!(title.3, parser.episode().unwrap());
@@ -94,7 +94,7 @@ fn test_parser_episode() {
 #[test]
 fn test_parser_title() {
     for title in get_titles() {
-        let parser = Parser::new(title.0.to_owned());
+        let parser = Parser::new(title.0.to_owned()).unwrap();
         println!("- {}", title.0);
         assert!(parser.title().is_some());
         let titles = parser.title().unwrap();
@@ -106,7 +106,7 @@ fn test_parser_title() {
 #[test]
 fn test_parser_group() {
     for title in get_titles() {
-        let parser = Parser::new(title.0.to_owned());
+        let parser = Parser::new(title.0.to_owned()).unwrap();
         println!("- {}", title.0);
         let group = parser.group();
         assert!(group.is_some());

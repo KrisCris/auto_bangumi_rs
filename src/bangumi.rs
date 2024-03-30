@@ -47,7 +47,7 @@ impl BangumiTitle {
             .as_deref()
             .or(self.en.as_deref())
             .or(self.jp.as_deref())
-            .unwrap_or("")
+            .unwrap_or("Unknown")
     }
 }
 
@@ -63,12 +63,12 @@ impl fmt::Display for Bangumi {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let sp = format!("S{:02}E{:02}", &self.season, &self.episode);
         let group = match self.group.len() > 0 {
-            true => format!("- {}", self.group),
-            false => String::from(""),
+            true => format!("{}", self.group),
+            false => String::from("Unknown"),
         };
         write!(
             f,
-            "{} - {} {}",
+            "{} - {} - {}",
             &self.title,
             sp.bright_red(),
             group.bright_cyan()
@@ -94,8 +94,8 @@ impl Bangumi {
     }
     pub fn gen_filename(&self) -> String {
         let group = match self.group.len() > 0 {
-            true => format!("- {}", self.group),
-            false => String::from(""),
+            true => format!("{}", self.group),
+            false => String::from("Unknown"),
         };
 
         let ext = match &self.extension {
@@ -104,7 +104,7 @@ impl Bangumi {
         };
 
         format!(
-            "{} - S{:02}E{:02} {}{}",
+            "{} - S{:02}E{:02} - {}{}",
             self.title.get_default_title(),
             self.season,
             self.episode,

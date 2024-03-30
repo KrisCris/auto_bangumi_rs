@@ -26,6 +26,7 @@ lazy_static! {
     static ref RE_CN: Regex = Regex::new(r"[\u4e00-\u9fa5]{2,}").unwrap();
     static ref RE_EN: Regex = Regex::new(r"[a-zA-Z]{3,}").unwrap();
     static ref RE_EXT: Regex = Regex::new(r"(?P<ext>\.\w+)$").unwrap();
+    static ref RE_FORMATTED: Regex = Regex::new(r"(.*) - (S\d{2}E\d{2}) - (.*?)(\.\w+)?$").unwrap();
 }
 pub struct Parser {
     raw: String,
@@ -35,7 +36,14 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(raw_title: String) -> Self {
+    pub fn new(raw_title: String) -> Option<Self> {
+        match RE_FORMATTED.captures(&raw_title) {
+            Some(_) => {
+                return None
+            },
+            None => {}
+        }
+
         // println!("- Raw Title: {}", raw_title);
         // this looks bad but idk if there is a better way...
         let processed = RE_LEFT_BRACKETS.replace_all(&raw_title.trim(), " [");
@@ -76,12 +84,12 @@ impl Parser {
         } else {
         }
 
-        Parser {
+        Some(Parser {
             raw,
             raw_season,
             raw_episode,
             raw_others,
-        }
+        })
     }
 
     pub fn from_path(path: &PathBuf) -> Option<Self> {
@@ -90,7 +98,7 @@ impl Parser {
         }
         if let Some(filename) = path.file_name() {
             let name = filename.to_string_lossy().as_ref().to_owned();
-            return Some(Self::new(name));
+            return Self::new(name);
         }
         None
     }
@@ -230,7 +238,7 @@ impl Parser {
     pub fn to_bangumi(self) -> Option<Bangumi> {
         match self.can_parse() {
             true => {
-                let group = self.group().unwrap_or("").to_owned();
+                let group = self.group().unwrap_or("Unknown").to_owned();
                 let Some(title) = self.title() else {
                     return None;
                 };
@@ -298,7 +306,16 @@ mod test {
     #[test]
     fn test_name() {
         let p = Parser::new("【喵萌奶茶屋】★04月新番★[百合是我的工作！/我的百合乃工作是也！/私の百合はお仕事です！/Watashi no Yuri wa Oshigoto desu!][03][1080p][简日双语][招募翻译校对]".to_owned());
-        let b = p.to_bangumi();
+        let b = p.unwrap().to_bangumi();
         println!("{}", b.unwrap());
+    }
+
+    #[test]
+    fn test_formatted_name() {
+        let p = Parser::new("无职转生，到了异世-界就拿出真本事 第2季 - S02E00 - Skymoon-Raws.mkv".to_owned());
+        match p {
+            Some(_) => assert!(false),
+            None => {}
+        }
     }
 }
