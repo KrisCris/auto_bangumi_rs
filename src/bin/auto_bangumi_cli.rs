@@ -9,15 +9,15 @@ use colored::Colorize;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None, arg_required_else_help = true)]
+#[command(author, version, about="A bangumi (anime) renamer authored by _connlost.", long_about = None, arg_required_else_help = true)]
 struct Cli {
-    #[arg(short, long, value_name = "PATHS", num_args = 1..)]
-    inputs: Vec<PathBuf>,
-    #[arg(short, long, value_name = "DIRECTORY")]
-    output: PathBuf,
+    #[arg(short, long, value_name = "PATH", help="Either a file or the parent directory")]
+    input: Vec<PathBuf>,
+    #[arg(short, long, value_name = "DIRECTORY", help="Optional, default to the parent directory of the renamed file")]
+    output: Option<PathBuf>,
     #[arg(short, long)]
     dryrun: bool,
-    #[arg(short, long)]
+    #[arg(short, long, help="Group animes by series and season")]
     group_by_name: bool,
     #[command(subcommand)]
     mode: Mode,
@@ -34,7 +34,7 @@ fn main() {
     let cli = Cli::parse();
     let mut files = Vec::new();
 
-    for bangumi_path in cli.inputs {
+    for bangumi_path in cli.input {
         if !bangumi_path.exists() {
             eprintln!(
                 "Path {} does not exist!",
@@ -75,14 +75,19 @@ fn main() {
         if let Some(bangumi) =
             BangumiParser::from_path(&path).and_then(|parser| parser.to_bangumi())
         {
-            let out_path = bangumi.gen_fullpath(&cli.output, cli.group_by_name);
+            let output_path = match &cli.output {
+                Some(output) => output.to_owned(),
+                None => path.parent().unwrap().to_path_buf()
+            };
+
+            let out_path = bangumi.gen_fullpath(&output_path, cli.group_by_name);
             match rename_file(&path, &out_path, &cli.mode, cli.dryrun) {
                 Ok(_) => (),
                 Err(e) => eprintln!("{}", e),
             }
         } else {
             eprintln!(
-                "Error parsing file: {}, skipping..",
+                "Skipping {}",
                 path.to_string_lossy().green()
             );
         }
