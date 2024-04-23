@@ -5,7 +5,7 @@ use rss::Channel;
 #[test]
 fn test_parser() {
     for title in get_titles() {
-        let parsed = Parser::new(title.0.to_owned()).and_then(|parser| parser.to_bangumi());
+        let parsed = Parser::new(title.0.to_owned()).and_then(|parser| parser.to_bangumi(None));
         assert!(parsed.is_some());
         let parsed = parsed.unwrap();
         println!("{}", parsed);

@@ -28,7 +28,7 @@ async fn test_url(url: &str) {
             if let Some(raw_title) = item.title {
                 let parser = Parser::new(raw_title).unwrap();
                 if parser.can_parse() {
-                    match parser.to_bangumi() {
+                    match parser.to_bangumi(None) {
                         Some(b) => println!("{}", b),
                         None => eprintln!("{}", "FAILED".red())
                     }
