@@ -235,7 +235,7 @@ impl Parser {
         }
     }
 
-    pub fn to_bangumi(self, season: Option<u32>) -> Option<Bangumi> {
+    pub fn to_bangumi(self, season: Option<u32>, offset: Option<u32>) -> Option<Bangumi> {
         match self.can_parse() {
             true => {
                 let group = self.group().unwrap_or("Unknown").to_owned();
@@ -246,8 +246,9 @@ impl Parser {
                     Some(s) => s,
                     None => self.season()
                 };
+                let offset: u32 = offset.unwrap_or(0);
                 // let season = self.season();
-                let episode = self.episode().unwrap_or(0);
+                let episode = self.episode().unwrap_or(0) + offset;
                 Some(Bangumi::new(
                     title,
                     season,
@@ -310,7 +311,7 @@ mod test {
     #[test]
     fn test_name() {
         let p = Parser::new("【喵萌奶茶屋】★04月新番★[百合是我的工作！/我的百合乃工作是也！/私の百合はお仕事です！/Watashi no Yuri wa Oshigoto desu!][03][1080p][简日双语][招募翻译校对]".to_owned());
-        let b = p.unwrap().to_bangumi(None);
+        let b = p.unwrap().to_bangumi(Some(0), Some(5));
         println!("{}", b.unwrap());
     }
 

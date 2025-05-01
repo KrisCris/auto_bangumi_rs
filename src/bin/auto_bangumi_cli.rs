@@ -82,6 +82,15 @@ fn try_read_season_from_dir(parent: &Path) -> Option<u32> {
         .ok();
 }
 
+fn try_read_offset_from_dir(parent: &Path) -> Option<u32> {
+    let dot_offset_path = parent.join(".offset");
+    return fs::read_to_string(dot_offset_path)
+        .ok()?
+        .trim()
+        .parse::<u32>()
+        .ok();
+}
+
 fn rename_file(
     src: &PathBuf,
     dst: &PathBuf,
@@ -129,8 +138,9 @@ fn _sanitize_filename(filename: &str) -> String {
 fn process_files(paths: Vec<PathBuf>, cli: &Cli) {
     for path in paths {
         let season = path.parent().and_then(try_read_season_from_dir);
+        let offset = path.parent().and_then(try_read_offset_from_dir);
         if let Some(bangumi) =
-            BangumiParser::from_path(&path).and_then(|parser| parser.to_bangumi(season))
+            BangumiParser::from_path(&path).and_then(|parser| parser.to_bangumi(season, offset))
         {
             let output_path = match &cli.output {
                 Some(output) => output.to_owned(),
